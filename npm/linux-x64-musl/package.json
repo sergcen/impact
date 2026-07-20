@@ -1,6 +1,6 @@
 {
   "name": "@monorepa/impact-linux-x64-musl",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Native binary for @monorepa/impact on Linux x64 with musl",
   "author": "Monorepa",
   "license": "MIT",

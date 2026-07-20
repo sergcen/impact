@@ -46,7 +46,7 @@ npm install --save-dev @monorepa/impact
 Ask which workspaces are affected by your branch:
 
 ```bash
-npx monorepa affected --base origin/main
+npx monorepa-impact affected --base origin/main
 ```
 
 Example output:
@@ -60,7 +60,7 @@ That list is the complete set of discovered workspaces reachable from the Git di
 current working tree. With pnpm, you can immediately run a command only there:
 
 ```bash
-npx monorepa affected --base origin/main -- 'pnpm {workspaces} --if-present test'
+npx monorepa-impact affected --base origin/main -- 'pnpm {workspaces} --if-present test'
 ```
 
 `{workspaces}` becomes sorted `--filter=<workspace>` arguments. When nothing is
@@ -73,9 +73,9 @@ small [configuration file](#workspace-setup).
 
 | Question | Command | Result |
 | --- | --- | --- |
-| What should CI run? | `monorepa affected --base origin/main` | Affected workspace names |
+| What should CI run? | `monorepa-impact affected --base origin/main` | Affected workspace names |
 | Why is a project affected? | Add `--explain` | The shortest dependency chain |
-| What imports this module? | `monorepa dependents <file>` | Direct and transitive dependent files |
+| What imports this module? | `monorepa-impact dependents <file>` | Direct and transitive dependent files |
 | Who uses this export? | Add `--specifier <name>` | Only consumers of that binding |
 | How do I automate it? | Add `--json` | Sorted, stable, camel-cased JSON |
 
@@ -141,9 +141,9 @@ Affected mode compares the base ref with `HEAD` and includes current working-tre
 changes:
 
 ```bash
-npx monorepa affected --base origin/main
-npx monorepa affected --base origin/main --explain
-npx monorepa affected --base origin/main --json
+npx monorepa-impact affected --base origin/main
+npx monorepa-impact affected --base origin/main --explain
+npx monorepa-impact affected --base origin/main --json
 ```
 
 Use `--explain` when a human needs the reason and `--json` when another tool needs the
@@ -155,19 +155,19 @@ must include the base branch history.
 Trace every direct and transitive importer of a file:
 
 ```bash
-npx monorepa dependents packages/ui/src/button.tsx
+npx monorepa-impact dependents packages/ui/src/button.tsx
 ```
 
 Restrict the traversal to the `Button` export and show the chain:
 
 ```bash
-npx monorepa dependents packages/ui/src/button.tsx --specifier Button --explain
+npx monorepa-impact dependents packages/ui/src/button.tsx --specifier Button --explain
 ```
 
 Return only immediate importers:
 
 ```bash
-npx monorepa dependents packages/ui/src/button.tsx --direct
+npx monorepa-impact dependents packages/ui/src/button.tsx --direct
 ```
 
 Pass several target files as positional arguments; `--specifier` is repeatable. Use
@@ -270,7 +270,7 @@ Rust is required only when building from source.
 - A successful query with no matches exits with `0`.
 - Invalid arguments, graph or cache failures, and child-command failures return a
   non-zero exit code.
-- Version `1.0.0` treats the CLI, configuration, and public JSON interface as stable
+- Version `1.0.1` treats the CLI, configuration, and public JSON interface as stable
   under Semantic Versioning.
 
 See the [CLI and JSON reference](./docs/cli.md) for every flag and output field.
@@ -291,7 +291,7 @@ Building from source requires Rust 1.89 or newer:
 
 ```bash
 cargo build --release
-./target/release/monorepa --help
+./target/release/monorepa-impact --help
 ```
 
 Before changing graph semantics, resolution, cache formats, or JSON output, read

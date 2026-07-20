@@ -27,7 +27,7 @@ Build and exercise the release CLI:
 
 ```bash
 cargo build --release
-./target/release/monorepa --help
+./target/release/monorepa-impact --help
 ```
 
 ## Tests

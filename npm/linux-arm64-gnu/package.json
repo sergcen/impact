@@ -1,6 +1,6 @@
 {
   "name": "@monorepa/impact-linux-arm64-gnu",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Native binary for @monorepa/impact on Linux ARM64 with glibc",
   "author": "Monorepa",
   "license": "MIT",

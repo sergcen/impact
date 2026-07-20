@@ -1,6 +1,6 @@
 {
   "name": "@monorepa/impact",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Native change-impact and reverse-dependency analysis for JavaScript and TypeScript repositories",
   "author": "Monorepa",
   "license": "MIT",
@@ -30,7 +30,7 @@
   "files": [
     "LICENSE",
     "docs",
-    "npm/monorepa.exe",
+    "npm/monorepa-impact.exe",
     "npm/install.cjs",
     "npm/platform.cjs",
     "README.md"
@@ -38,20 +38,20 @@
   "preferUnplugged": true,
   "sideEffects": false,
   "bin": {
-    "monorepa": "npm/monorepa.exe"
+    "monorepa-impact": "npm/monorepa-impact.exe"
   },
   "exports": {
     "./package.json": "./package.json"
   },
   "optionalDependencies": {
-    "@monorepa/impact-darwin-arm64": "1.0.0",
-    "@monorepa/impact-darwin-x64": "1.0.0",
-    "@monorepa/impact-linux-arm64-gnu": "1.0.0",
-    "@monorepa/impact-linux-arm64-musl": "1.0.0",
-    "@monorepa/impact-linux-x64-gnu": "1.0.0",
-    "@monorepa/impact-linux-x64-musl": "1.0.0",
-    "@monorepa/impact-win32-arm64-msvc": "1.0.0",
-    "@monorepa/impact-win32-x64-msvc": "1.0.0"
+    "@monorepa/impact-darwin-arm64": "1.0.1",
+    "@monorepa/impact-darwin-x64": "1.0.1",
+    "@monorepa/impact-linux-arm64-gnu": "1.0.1",
+    "@monorepa/impact-linux-arm64-musl": "1.0.1",
+    "@monorepa/impact-linux-x64-gnu": "1.0.1",
+    "@monorepa/impact-linux-x64-musl": "1.0.1",
+    "@monorepa/impact-win32-arm64-msvc": "1.0.1",
+    "@monorepa/impact-win32-x64-msvc": "1.0.1"
   },
   "publishConfig": {
     "access": "public"

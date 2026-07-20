@@ -1,6 +1,6 @@
 [package]
 name = "monorepa-impact"
-version = "1.0.0"
+version = "1.0.1"
 description = "Native change-impact and reverse-dependency analysis for JavaScript and TypeScript repositories"
 authors = ["Monorepa"]
 edition = "2024"
@@ -16,7 +16,7 @@ publish = false
 path = "rust/lib.rs"
 
 [[bin]]
-name = "monorepa"
+name = "monorepa-impact"
 path = "rust/main.rs"
 
 [dependencies]

@@ -79,7 +79,7 @@ jobs:
           GITHUB_REPOSITORY: sergcen/impact
         run: |
           mkdir -p npm/linux-x64-gnu/bin dist smoke
-          cp target/release/monorepa npm/linux-x64-gnu/bin/monorepa
+          cp target/release/monorepa-impact npm/linux-x64-gnu/bin/monorepa-impact
           node npm/prepare-package.cjs npm/linux-x64-gnu
           npm pack ./npm/linux-x64-gnu --pack-destination dist
           node npm/prepare-package.cjs .
@@ -93,7 +93,7 @@ jobs:
           npm install "../dist/monorepa-impact-linux-x64-gnu-${version}.tgz" "../dist/monorepa-impact-${version}.tgz"
           test ! -e node_modules/@monorepa/impact/npm/cli.cjs
           cmp \
-            node_modules/@monorepa/impact-linux-x64-gnu/bin/monorepa \
-            node_modules/@monorepa/impact/npm/monorepa.exe
+            node_modules/@monorepa/impact-linux-x64-gnu/bin/monorepa-impact \
+            node_modules/@monorepa/impact/npm/monorepa-impact.exe
           mkdir empty-path
-          PATH="$PWD/empty-path" ./node_modules/.bin/monorepa --version
+          PATH="$PWD/empty-path" ./node_modules/.bin/monorepa-impact --version

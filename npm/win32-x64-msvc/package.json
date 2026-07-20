@@ -1,6 +1,6 @@
 {
   "name": "@monorepa/impact-win32-x64-msvc",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Native binary for @monorepa/impact on Windows x64",
   "author": "Monorepa",
   "license": "MIT",

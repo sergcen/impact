@@ -12,7 +12,7 @@ test('installs the selected executable without a runtime JavaScript launcher', (
   const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'monorepa-impact-install-'));
   context.after(() => fs.rmSync(directory, { recursive: true, force: true }));
   const source = path.join(directory, 'platform-binary');
-  const target = path.join(directory, 'root-package', 'monorepa.exe');
+  const target = path.join(directory, 'root-package', 'monorepa-impact.exe');
   const bytes = Buffer.from([0x46, 0x4f, 0x44, 0x43, 0x00, 0xff]);
   fs.writeFileSync(source, bytes, { mode: 0o755 });
 
@@ -35,7 +35,7 @@ test('resolves a platform package executable at install time', () => {
         return manifest;
       },
     }),
-    path.join(path.dirname(manifest), 'bin', 'monorepa'),
+    path.join(path.dirname(manifest), 'bin', 'monorepa-impact'),
   );
   assert.equal(
     resolveBinary({
@@ -43,12 +43,12 @@ test('resolves a platform package executable at install time', () => {
       platform: 'win32-arm64-msvc',
       resolveManifest: () => manifest,
     }),
-    path.join(path.dirname(manifest), 'bin', 'monorepa.exe'),
+    path.join(path.dirname(manifest), 'bin', 'monorepa-impact.exe'),
   );
 });
 
 test('honors the renamed native binary override', () => {
-  const configured = path.join('custom', 'monorepa');
+  const configured = path.join('custom', 'monorepa-impact');
   assert.equal(
     resolveBinary({ environment: { MONOREPA_IMPACT_BINARY: configured } }),
     path.resolve(configured),

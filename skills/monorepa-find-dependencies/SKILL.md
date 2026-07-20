@@ -6,7 +6,7 @@ description: Find direct and transitive module dependents, binding-level consume
 # Find dependencies with Monorepa
 
 Use the bundled wrapper for read-only impact and reverse-dependency queries. It prefers
-an installed `monorepa` binary, detects the source checkout, and falls
+an installed `monorepa-impact` binary, detects the source checkout, and falls
 back to `@monorepa/impact@1` through npm without changing the target project's
 manifest.
 

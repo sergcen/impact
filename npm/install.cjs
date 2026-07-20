@@ -6,7 +6,7 @@ const path = require('node:path');
 const { currentPlatformKey, platformPackages } = require('./platform.cjs');
 
 const root = path.resolve(__dirname, '..');
-const destination = path.join(__dirname, 'monorepa.exe');
+const destination = path.join(__dirname, 'monorepa-impact.exe');
 
 function resolveBinary(options = {}) {
   const environment = options.environment ?? process.env;
@@ -36,8 +36,8 @@ function resolveBinary(options = {}) {
   }
 
   const executable = platform.startsWith('win32-')
-    ? 'monorepa.exe'
-    : 'monorepa';
+    ? 'monorepa-impact.exe'
+    : 'monorepa-impact';
   return path.join(path.dirname(manifest), 'bin', executable);
 }
 
@@ -64,10 +64,10 @@ function main() {
     installBinary(resolveBinary());
   } catch (error) {
     if (fs.existsSync(path.join(root, 'Cargo.toml'))) {
-      console.warn(`monorepa: native npm binary was not installed: ${error.message}`);
+      console.warn(`monorepa-impact: native npm binary was not installed: ${error.message}`);
       return;
     }
-    console.error(`monorepa: ${error.message}`);
+    console.error(`monorepa-impact: ${error.message}`);
     process.exitCode = 1;
   }
 }

@@ -9,19 +9,20 @@ use std::env;
 use std::io::{self, BufWriter, Write};
 use std::process::{Command, ExitCode, Stdio};
 
-const HELP: &str = "Usage: monorepa <command> [options]
+const HELP: &str = "Usage: monorepa-impact <command> [options]
 
 Commands:
   affected              Find workspaces affected by Git changes
   dependents <file>...  Find modules that depend on one or more files
 
-Run 'monorepa <command> --help' for command-specific options.
+Run 'monorepa-impact <command> --help' for command-specific options.
 
 Global options:
   -V, --version         Show the version
   -h, --help            Show this help";
 
-const AFFECTED_HELP: &str = "Usage: monorepa affected [options] [-- command with {workspaces}]
+const AFFECTED_HELP: &str =
+    "Usage: monorepa-impact affected [options] [-- command with {workspaces}]
 
 Find workspaces affected by the Git diff and current working tree.
 
@@ -36,7 +37,7 @@ Options:
   --trust-cache         Skip automatic working-tree validation for this query
   -h, --help            Show this help";
 
-const DEPENDENTS_HELP: &str = "Usage: monorepa dependents <file> [<file>...] [options]
+const DEPENDENTS_HELP: &str = "Usage: monorepa-impact dependents <file> [<file>...] [options]
 
 Find direct or transitive modules that depend on the target files.
 
@@ -315,7 +316,7 @@ fn run() -> Result<i32, String> {
         return Ok(0);
     }
     if options.version {
-        println!("monorepa {}", env!("CARGO_PKG_VERSION"));
+        println!("monorepa-impact {}", env!("CARGO_PKG_VERSION"));
         return Ok(0);
     }
     let cwd = env::current_dir().map_err(|error| error.to_string())?;

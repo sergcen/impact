@@ -45,43 +45,43 @@ jobs:
           - os: macos-15
             target: aarch64-apple-darwin
             package: darwin-arm64
-            source: monorepa
-            destination: monorepa
+            source: monorepa-impact
+            destination: monorepa-impact
           - os: macos-15-intel
             target: x86_64-apple-darwin
             package: darwin-x64
-            source: monorepa
-            destination: monorepa
+            source: monorepa-impact
+            destination: monorepa-impact
           - os: ubuntu-22.04
             target: x86_64-unknown-linux-gnu
             package: linux-x64-gnu
-            source: monorepa
-            destination: monorepa
+            source: monorepa-impact
+            destination: monorepa-impact
           - os: ubuntu-22.04
             target: x86_64-unknown-linux-musl
             package: linux-x64-musl
-            source: monorepa
-            destination: monorepa
+            source: monorepa-impact
+            destination: monorepa-impact
           - os: ubuntu-22.04-arm
             target: aarch64-unknown-linux-gnu
             package: linux-arm64-gnu
-            source: monorepa
-            destination: monorepa
+            source: monorepa-impact
+            destination: monorepa-impact
           - os: ubuntu-22.04-arm
             target: aarch64-unknown-linux-musl
             package: linux-arm64-musl
-            source: monorepa
-            destination: monorepa
+            source: monorepa-impact
+            destination: monorepa-impact
           - os: windows-latest
             target: x86_64-pc-windows-msvc
             package: win32-x64-msvc
-            source: monorepa.exe
-            destination: monorepa.exe
+            source: monorepa-impact.exe
+            destination: monorepa-impact.exe
           - os: windows-11-arm
             target: aarch64-pc-windows-msvc
             package: win32-arm64-msvc
-            source: monorepa.exe
-            destination: monorepa.exe
+            source: monorepa-impact.exe
+            destination: monorepa-impact.exe
     steps:
       - name: Check out repository
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
@@ -108,7 +108,7 @@ jobs:
           SOURCE: ${{ matrix.source }}
           TARGET: ${{ matrix.target }}
         run: |
-          expected="monorepa $(node -p "require('./package.json').version")"
+          expected="monorepa-impact $(node -p "require('./package.json').version")"
           actual=$("target/${TARGET}/release/${SOURCE}" --version)
           test "$actual" = "$expected"
       - name: Smoke-test install-time native entrypoint
@@ -119,8 +119,8 @@ jobs:
         run: |
           export MONOREPA_IMPACT_BINARY="target/${TARGET}/release/${SOURCE}"
           node npm/install.cjs
-          expected="monorepa $(node -p "require('./package.json').version")"
-          actual=$("$PWD/npm/monorepa.exe" --version)
+          expected="monorepa-impact $(node -p "require('./package.json').version")"
+          actual=$("$PWD/npm/monorepa-impact.exe" --version)
           test "$actual" = "$expected"
       - name: Assemble platform package
         shell: bash

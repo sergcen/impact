@@ -3,8 +3,8 @@
 ## Command model
 
 ```text
-monorepa affected [options] [-- command with {workspaces}]
-monorepa dependents <file> [<file>...] [options]
+monorepa-impact affected [options] [-- command with {workspaces}]
+monorepa-impact dependents <file> [<file>...] [options]
 ```
 
 `affected` starts from Git changes and returns the workspaces those changes can reach.
@@ -14,8 +14,8 @@ return the files that depend on them.
 Use command-specific help to see only relevant options:
 
 ```bash
-monorepa affected --help
-monorepa dependents --help
+monorepa-impact affected --help
+monorepa-impact dependents --help
 ```
 
 ## Options
@@ -46,8 +46,8 @@ Invalid combinations are rejected. Notably:
 The pre-subcommand forms remain accepted for existing automation:
 
 ```text
-monorepa --base <ref>
-monorepa --dependents <file> [--dependents <file>...]
+monorepa-impact --base <ref>
+monorepa-impact --dependents <file> [--dependents <file>...]
 ```
 
 New integrations should use `affected` and `dependents`. Legacy aliases return the
@@ -57,9 +57,9 @@ output.
 ## Affected-project mode
 
 ```bash
-monorepa affected --base origin/main
-monorepa affected --base origin/main --explain
-monorepa affected --base origin/main --json
+monorepa-impact affected --base origin/main
+monorepa-impact affected --base origin/main --explain
+monorepa-impact affected --base origin/main --json
 ```
 
 The base ref is compared with `HEAD` through its merge base. Staged, unstaged, and
@@ -70,7 +70,7 @@ Without `--json` or `--explain`, stdout contains one sorted workspace name per l
 ### Run a child command
 
 ```bash
-monorepa affected --base origin/main -- 'pnpm {workspaces} --if-present test'
+monorepa-impact affected --base origin/main -- 'pnpm {workspaces} --if-present test'
 ```
 
 `{workspaces}` expands to sorted `--filter=<workspace>` arguments. The command is not
@@ -79,19 +79,19 @@ started when the affected set is empty. Its exit status becomes the CLI exit sta
 ## Dependents mode
 
 ```bash
-monorepa dependents packages/core/src/example.ts
+monorepa-impact dependents packages/core/src/example.ts
 ```
 
 Multiple targets can be queried together:
 
 ```bash
-monorepa dependents packages/core/src/example.ts packages/contracts/src/model.ts
+monorepa-impact dependents packages/core/src/example.ts packages/contracts/src/model.ts
 ```
 
 Restrict traversal to bindings:
 
 ```bash
-monorepa dependents packages/core/src/example.ts --specifier createExample --specifier ExampleModel
+monorepa-impact dependents packages/core/src/example.ts --specifier createExample --specifier ExampleModel
 ```
 
 Without specifiers, traversal begins with `*`. With specifiers, only matching concrete
@@ -153,6 +153,6 @@ binding information is available, plus `file`, `type`, and optional `via`.
 - Invalid arguments, configuration, graph, resolution, or cache errors exit non-zero.
 - A child-command failure returns that command's non-zero exit code when available.
 
-Version `1.0.0` treats the canonical commands, supported legacy aliases, configuration
+Version `1.0.1` treats the canonical commands, supported legacy aliases, configuration
 keys, and public JSON fields as stable under Semantic Versioning. Minor releases may
 add fields; renaming or removing a field requires a major release.

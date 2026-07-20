@@ -63,7 +63,7 @@ fn trusted_and_automatic_dependents_cache_process_p95_stay_below_5ms() {
         "packages/library/src/consumer.ts",
         "import { feature } from './feature';\nvoid feature;\n",
     );
-    let binary = env!("CARGO_BIN_EXE_monorepa");
+    let binary = env!("CARGO_BIN_EXE_monorepa-impact");
     let initial = Command::new(binary)
         .args([
             "dependents",

@@ -180,28 +180,28 @@ function executableCandidates(root, noDownload) {
     '@monorepa',
     'impact',
     'npm',
-    'monorepa.exe',
+    'monorepa-impact.exe',
   );
   if (fs.existsSync(installedBinary)) {
     candidates.push({ command: installedBinary, prefix: [] });
   }
 
   if (process.platform !== 'win32') {
-    const local = path.join(root, 'node_modules', '.bin', 'monorepa');
+    const local = path.join(root, 'node_modules', '.bin', 'monorepa-impact');
     if (fs.existsSync(local)) candidates.push({ command: local, prefix: [] });
   }
 
   const sourceRoot = path.resolve(__dirname, '..', '..', '..');
   const sourceBinary = process.platform === 'win32'
-    ? path.join(sourceRoot, 'target', 'release', 'monorepa.exe')
-    : path.join(sourceRoot, 'bin', 'monorepa');
+    ? path.join(sourceRoot, 'target', 'release', 'monorepa-impact.exe')
+    : path.join(sourceRoot, 'bin', 'monorepa-impact');
   if (fs.existsSync(sourceBinary)) candidates.push({ command: sourceBinary, prefix: [] });
 
-  candidates.push({ command: 'monorepa', prefix: [] });
+  candidates.push({ command: 'monorepa-impact', prefix: [] });
   if (!noDownload && process.platform !== 'win32') {
     candidates.push({
       command: 'npx',
-      prefix: ['--yes', '--package', '@monorepa/impact@1', 'monorepa'],
+      prefix: ['--yes', '--package', '@monorepa/impact@1', 'monorepa-impact'],
       download: true,
     });
   }
@@ -228,7 +228,7 @@ function execute(root, args, noDownload) {
   const downloadHint = noDownload || process.platform === 'win32'
     ? 'install @monorepa/impact in the repository'
     : 'install @monorepa/impact or rerun without --no-download';
-  fail(`monorepa is unavailable; ${downloadHint}`);
+  fail(`monorepa-impact is unavailable; ${downloadHint}`);
 }
 
 function main() {

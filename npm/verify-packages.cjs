@@ -79,7 +79,7 @@ assert(fs.existsSync(path.join(root, 'LICENSE')), 'MIT license file is missing')
 assert(rootManifest.packageManager === 'npm@12.0.1', 'unexpected npm toolchain version');
 assert(rootManifest.private !== true, 'root package must be publishable');
 assert(
-  rootManifest.bin?.monorepa === 'npm/monorepa.exe',
+  rootManifest.bin?.['monorepa-impact'] === 'npm/monorepa-impact.exe',
   'root CLI entrypoint must be the installed native executable',
 );
 assert(Object.keys(rootManifest.bin ?? {}).length === 1, 'root package exposes an unexpected CLI');
@@ -89,7 +89,7 @@ assert(rootManifest.files?.includes('npm/platform.cjs'), 'platform resolver is n
 assert(rootManifest.files?.includes('LICENSE'), 'MIT license is not publishable');
 assert(rootManifest.files?.includes('docs'), 'linked documentation is not publishable');
 assert(
-  rootManifest.files?.includes('npm/monorepa.exe'),
+  rootManifest.files?.includes('npm/monorepa-impact.exe'),
   'native executable destination is not publishable',
 );
 assert(rootManifest.preferUnplugged === true, 'root package must be writable during installation');

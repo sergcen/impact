@@ -108,7 +108,7 @@ fn git_only_path() -> RestrictedPath {
 }
 
 fn cli(root: &Path, args: &[&str], path: Option<&Path>) -> Output {
-    let mut command = Command::new(env!("CARGO_BIN_EXE_monorepa"));
+    let mut command = Command::new(env!("CARGO_BIN_EXE_monorepa-impact"));
     command.args(args).current_dir(root);
     if let Some(path) = path {
         command.env("PATH", path);
@@ -1315,7 +1315,7 @@ fn cli_validates_modes_and_supports_human_explanations() {
     let help = cli(root.path(), &["--help"], None);
     assert!(help.status.success());
     let help = String::from_utf8_lossy(&help.stdout);
-    assert!(help.starts_with("Usage: monorepa"));
+    assert!(help.starts_with("Usage: monorepa-impact"));
     for command in ["affected", "dependents"] {
         assert!(help.contains(command));
     }
@@ -1325,14 +1325,14 @@ fn cli_validates_modes_and_supports_human_explanations() {
     let affected_help = cli(root.path(), &["affected", "--help"], None);
     assert!(affected_help.status.success());
     let affected_help = String::from_utf8_lossy(&affected_help.stdout);
-    assert!(affected_help.starts_with("Usage: monorepa affected"));
+    assert!(affected_help.starts_with("Usage: monorepa-impact affected"));
     assert!(affected_help.contains("--base"));
     assert!(!affected_help.contains("--specifier"));
 
     let dependents_help = cli(root.path(), &["dependents", "--help"], None);
     assert!(dependents_help.status.success());
     let dependents_help = String::from_utf8_lossy(&dependents_help.stdout);
-    assert!(dependents_help.starts_with("Usage: monorepa dependents"));
+    assert!(dependents_help.starts_with("Usage: monorepa-impact dependents"));
     assert!(dependents_help.contains("--specifier"));
     assert!(dependents_help.contains("--direct"));
     assert!(!dependents_help.contains("--base"));
@@ -1341,7 +1341,7 @@ fn cli_validates_modes_and_supports_human_explanations() {
     assert!(version.status.success());
     assert_eq!(
         String::from_utf8_lossy(&version.stdout).trim(),
-        format!("monorepa {}", env!("CARGO_PKG_VERSION"))
+        format!("monorepa-impact {}", env!("CARGO_PKG_VERSION"))
     );
 
     let empty_path = tempfile::tempdir().expect("empty PATH");
