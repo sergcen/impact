@@ -1951,6 +1951,9 @@ mod tests {
         let payload = rmp_serde::to_vec_named(&snapshot).expect("validation payload");
         let borrowed: BorrowedValidationSnapshot<'_> =
             rmp_serde::from_slice(&payload).expect("borrowed validation snapshot");
+        // Some CI filesystems expose directory mtimes with one-second precision.
+        // Cross a timestamp tick before testing directory-addition detection.
+        std::thread::sleep(std::time::Duration::from_millis(1_100));
         fs::write(
             source_directory.join("added.ts"),
             "export const added = true;\n",
