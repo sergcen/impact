@@ -1,0 +1,23 @@
+{
+  "name": "@monorepa/impact-linux-x64-musl",
+  "version": "1.0.0",
+  "description": "Native binary for @monorepa/impact on Linux x64 with musl",
+  "author": "Monorepa",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sergcen/impact.git"
+  },
+  "homepage": "https://github.com/sergcen/impact#readme",
+  "bugs": {
+    "url": "https://github.com/sergcen/impact/issues"
+  },
+  "preferUnplugged": true,
+  "os": ["linux"],
+  "cpu": ["x64"],
+  "libc": ["musl"],
+  "files": ["bin", "LICENSE"],
+  "publishConfig": {
+    "access": "public"
+  }
+}

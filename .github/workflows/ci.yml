@@ -1,0 +1,98 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Test (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+          - ubuntu-22.04-arm
+          - macos-latest
+          - windows-latest
+          - windows-11-arm
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - name: Install Rust
+        uses: actions-rust-lang/setup-rust-toolchain@166cdcfd11aee3cb47222f9ddb555ce30ddb9659 # v1.17.0
+        with:
+          toolchain: 1.89.0
+      - name: Run tests
+        run: cargo test --locked
+
+  lint:
+    name: Format and Clippy
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - name: Install Rust
+        uses: actions-rust-lang/setup-rust-toolchain@166cdcfd11aee3cb47222f9ddb555ce30ddb9659 # v1.17.0
+        with:
+          toolchain: 1.89.0
+          components: rustfmt, clippy
+      - name: Check formatting
+        run: cargo fmt --all -- --check
+      - name: Run Clippy
+        run: cargo clippy --locked --all-targets -- -D warnings
+
+  package:
+    name: Validate npm package
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - name: Install Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+      - name: Install Rust
+        uses: actions-rust-lang/setup-rust-toolchain@166cdcfd11aee3cb47222f9ddb555ce30ddb9659 # v1.17.0
+        with:
+          toolchain: 1.89.0
+      - name: Build native binary
+        run: cargo build --release --locked
+      - name: Validate package metadata
+        run: node npm/verify-packages.cjs
+      - name: Test native npm installer
+        run: node --test npm/install.test.cjs
+      - name: Assemble npm archives
+        env:
+          GITHUB_REPOSITORY: sergcen/impact
+        run: |
+          mkdir -p npm/linux-x64-gnu/bin dist smoke
+          cp target/release/monorepa npm/linux-x64-gnu/bin/monorepa
+          node npm/prepare-package.cjs npm/linux-x64-gnu
+          npm pack ./npm/linux-x64-gnu --pack-destination dist
+          node npm/prepare-package.cjs .
+          node npm/verify-packages.cjs
+          npm pack . --pack-destination dist
+      - name: Install and run packed CLI
+        working-directory: smoke
+        run: |
+          version=$(node -p "require('../package.json').version")
+          npm init --yes
+          npm install "../dist/monorepa-impact-linux-x64-gnu-${version}.tgz" "../dist/monorepa-impact-${version}.tgz"
+          test ! -e node_modules/@monorepa/impact/npm/cli.cjs
+          cmp \
+            node_modules/@monorepa/impact-linux-x64-gnu/bin/monorepa \
+            node_modules/@monorepa/impact/npm/monorepa.exe
+          mkdir empty-path
+          PATH="$PWD/empty-path" ./node_modules/.bin/monorepa --version

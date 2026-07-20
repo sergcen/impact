@@ -1,0 +1,4 @@
+interface:
+  display_name: "Monorepa Dependency Search"
+  short_description: "Instant dependency and change-impact search"
+  default_prompt: "Use $monorepa-find-dependencies to find what depends on this module and explain the dependency chain."

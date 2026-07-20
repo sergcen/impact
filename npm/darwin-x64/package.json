@@ -1,0 +1,22 @@
+{
+  "name": "@monorepa/impact-darwin-x64",
+  "version": "1.0.0",
+  "description": "Native binary for @monorepa/impact on macOS x64",
+  "author": "Monorepa",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sergcen/impact.git"
+  },
+  "homepage": "https://github.com/sergcen/impact#readme",
+  "bugs": {
+    "url": "https://github.com/sergcen/impact/issues"
+  },
+  "preferUnplugged": true,
+  "os": ["darwin"],
+  "cpu": ["x64"],
+  "files": ["bin", "LICENSE"],
+  "publishConfig": {
+    "access": "public"
+  }
+}

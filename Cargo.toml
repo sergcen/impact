@@ -1,0 +1,48 @@
+[package]
+name = "monorepa-impact"
+version = "1.0.0"
+description = "Native change-impact and reverse-dependency analysis for JavaScript and TypeScript repositories"
+authors = ["Monorepa"]
+edition = "2024"
+rust-version = "1.89"
+readme = "README.md"
+license = "MIT"
+repository = "https://github.com/sergcen/impact"
+homepage = "https://github.com/sergcen/impact"
+keywords = ["dependencies", "javascript", "monorepo", "typescript", "cli"]
+publish = false
+
+[lib]
+path = "rust/lib.rs"
+
+[[bin]]
+name = "monorepa"
+path = "rust/main.rs"
+
+[dependencies]
+globset = "0.4"
+json5 = "0.4"
+libc = "0.2"
+lz4_flex = "0.11"
+oxc_allocator = "0.97"
+oxc_ast = "0.97"
+oxc_ast_visit = "0.97"
+oxc_parser = "0.97"
+oxc_span = "0.97"
+pathdiff = "0.2"
+rayon = "1"
+regex = "1"
+rmp-serde = "1"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+walkdir = "2"
+
+[dev-dependencies]
+tempfile = "3"
+
+[profile.release]
+codegen-units = 1
+lto = true
+opt-level = 3
+panic = "abort"
+strip = true

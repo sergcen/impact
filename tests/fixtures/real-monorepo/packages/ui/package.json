@@ -1,0 +1,14 @@
+{
+  "name": "@fixture/ui",
+  "private": true,
+  "exports": {
+    "./button": {
+      "browser": "./src/button.tsx",
+      "default": "./dist/button.js"
+    },
+    "./icons/*": {
+      "browser": "./src/icons/*.tsx",
+      "default": "./dist/icons/*.js"
+    }
+  }
+}

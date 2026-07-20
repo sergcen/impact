@@ -1,0 +1,3 @@
+@import './tokens.css';
+
+.button { color: var(--accent); }

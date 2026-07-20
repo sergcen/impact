@@ -1,0 +1,10 @@
+{
+  "name": "@fixture/data",
+  "private": true,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  }
+}

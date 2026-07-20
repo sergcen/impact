@@ -1,0 +1,8 @@
+{
+  "name": "@fixture/eslint-config",
+  "private": true,
+  "main": "./index.js",
+  "bin": {
+    "fixture-eslint": "./cli.js"
+  }
+}

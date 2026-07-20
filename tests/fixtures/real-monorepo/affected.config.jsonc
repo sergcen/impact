@@ -1,0 +1,20 @@
+{
+  exportConditions: ["import", "browser", "default", "types"],
+  workspaceFile: "workspace.yaml",
+  rootInputs: [
+    {
+      patterns: ["tooling/eslint/**"],
+      projects: "all",
+      invalidateGraph: true,
+    },
+    {
+      patterns: ["docs/**"],
+      projects: ["@fixture/storefront"],
+    },
+    {
+      patterns: ["tsconfig.base.json"],
+      projects: "dependents",
+      invalidateGraph: true,
+    },
+  ],
+}

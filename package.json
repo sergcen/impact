@@ -1,0 +1,73 @@
+{
+  "name": "@monorepa/impact",
+  "version": "1.0.0",
+  "description": "Native change-impact and reverse-dependency analysis for JavaScript and TypeScript repositories",
+  "author": "Monorepa",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sergcen/impact.git"
+  },
+  "homepage": "https://github.com/sergcen/impact#readme",
+  "bugs": {
+    "url": "https://github.com/sergcen/impact/issues"
+  },
+  "packageManager": "npm@12.0.1",
+  "keywords": [
+    "dependency-graph",
+    "dependency-analysis",
+    "change-impact",
+    "javascript",
+    "monorepo",
+    "reverse-dependencies",
+    "rust",
+    "typescript",
+    "affected-projects"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "files": [
+    "LICENSE",
+    "docs",
+    "npm/monorepa.exe",
+    "npm/install.cjs",
+    "npm/platform.cjs",
+    "README.md"
+  ],
+  "preferUnplugged": true,
+  "sideEffects": false,
+  "bin": {
+    "monorepa": "npm/monorepa.exe"
+  },
+  "exports": {
+    "./package.json": "./package.json"
+  },
+  "optionalDependencies": {
+    "@monorepa/impact-darwin-arm64": "1.0.0",
+    "@monorepa/impact-darwin-x64": "1.0.0",
+    "@monorepa/impact-linux-arm64-gnu": "1.0.0",
+    "@monorepa/impact-linux-arm64-musl": "1.0.0",
+    "@monorepa/impact-linux-x64-gnu": "1.0.0",
+    "@monorepa/impact-linux-x64-musl": "1.0.0",
+    "@monorepa/impact-win32-arm64-msvc": "1.0.0",
+    "@monorepa/impact-win32-x64-msvc": "1.0.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "postinstall": "node npm/install.cjs",
+    "build:native": "cargo build --release",
+    "bench:cache": "cargo test --release --test performance -- --ignored --nocapture",
+    "test": "cargo test",
+    "test:unit": "cargo test --lib",
+    "test:e2e": "cargo test --test native_e2e",
+    "test:installer": "node --test npm/install.test.cjs",
+    "test:skill": "node --test npm/skill.test.cjs",
+    "test:package": "node npm/verify-packages.cjs && node --test npm/install.test.cjs npm/skill.test.cjs && npm pack --dry-run",
+    "test:rust": "cargo test",
+    "lint": "cargo fmt --check && cargo clippy --all-targets -- -D warnings",
+    "prepublishOnly": "node npm/verify-packages.cjs"
+  }
+}
