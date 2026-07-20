@@ -202,6 +202,6 @@ jobs:
         run: |
           version=${GITHUB_REF_NAME#v}
           for archive in dist/monorepa-impact-*-"${version}".tgz; do
-            npm publish "$archive" --access public --provenance
+            npm publish "./${archive}" --access public --provenance
           done
-          npm publish "dist/monorepa-impact-${version}.tgz" --access public --provenance
+          npm publish "./dist/monorepa-impact-${version}.tgz" --access public --provenance
