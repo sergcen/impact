@@ -10,6 +10,7 @@
 </p>
 
 <p align="center">
+  <a href="https://www.npmjs.com/package/@monorepa/impact"><img alt="npm version" src="https://img.shields.io/npm/v/%40monorepa%2Fimpact?logo=npm"></a>
   <a href="./docs/cache.md#benchmark"><img alt="Warm-query p95 below 5 milliseconds" src="https://img.shields.io/badge/warm_query_p95-%3C5_ms-2ea44f"></a>
   <a href="./LICENSE"><img alt="MIT License" src="https://img.shields.io/badge/license-MIT-blue.svg"></a>
 </p>
@@ -42,6 +43,12 @@ Install the prebuilt native CLI:
 ```bash
 npm install --save-dev @monorepa/impact
 ```
+
+`@monorepa/impact` is the only package you install. It exposes the
+`monorepa-impact` command and lets npm select one compatible prebuilt binary for
+your operating system, CPU, and Linux libc. The platform-specific packages are
+internal release artifacts—not separate tools or dependencies you manage manually.
+Rust is not required for installation or use.
 
 Ask which workspaces are affected by your branch:
 
@@ -257,7 +264,7 @@ installable source is in [`skills/monorepa-find-dependencies`](./skills/monorepa
 | Workspaces | pnpm by default; npm, Yarn, Lerna, and custom layouts through configuration or the Codex skill wrapper |
 | Platforms | macOS, Linux, and Windows on ARM64 and x64 |
 | Linux | glibc 2.35+ and musl builds |
-| Installation | Node.js 22+ selects the prebuilt package; npm lifecycle scripts and optional dependencies must remain enabled |
+| Installation | Install only `@monorepa/impact`; Node.js 22+ selects one compatible prebuilt binary through npm optional dependencies, and lifecycle scripts must remain enabled |
 | Runtime | The installed CLI executes the Rust binary directly; Node.js is not used as a runtime launcher |
 | Git | Affected mode needs Git and the comparison history; dependents mode starts from target files |
 
