@@ -157,6 +157,33 @@ Use `--explain` when a human needs the reason and `--json` when another tool nee
 result. Affected mode requires the comparison ref to exist locally, so CI checkouts
 must include the base branch history.
 
+### Pass workspace paths to a single build
+
+Use `--paths` to print repository-relative workspace directories. Use
+`--with-script <name>` to keep only affected workspaces whose `package.json` defines
+that script as a non-empty string:
+
+```bash
+npx monorepa-impact affected --base origin/main --with-script build-types --paths
+```
+
+For a TypeScript project-reference build, pass all selected directories to one
+compiler process:
+
+```bash
+npx monorepa-impact affected --base origin/main --with-script build-types -- 'pnpm exec tsc -b {workspacePaths}'
+```
+
+`{workspacePaths}` supplies each directory as one quoted argument, including paths
+with spaces. Leave the placeholder itself unquoted inside the command template.
+Both path output and command arguments follow workspace-name order. JSON always
+includes a `workspacePaths` map alongside the existing `projects` names.
+
+The script filter runs after dependency traversal, so consumers reached through a
+workspace without the script are still considered. No command runs when the filtered
+selection is empty. The caller chooses the compiler flags and configuration; this
+filter neither runs the package script nor checks for `tsconfig.json`.
+
 ## Find module dependents
 
 Trace every direct and transitive importer of a file:

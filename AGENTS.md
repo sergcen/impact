@@ -14,6 +14,12 @@ Maintain one universal native dependency graph for:
 Task names such as `typecheck`, `test`, and `build` must never change graph topology.
 Command applicability belongs to the caller.
 
+`affected --with-script <name>` applies a caller-requested manifest filter only
+after traversal. Keep `projects`, `reasons`, and the additive `workspacePaths` JSON
+map aligned. `--paths` changes text output; `{workspacePaths}` supplies individually
+quoted directory arguments to one child command. Preserve empty-selection skipping
+and shell argument boundaries on both Unix and Windows.
+
 ## Non-negotiable invariants
 
 1. Keep dependency analysis and CLI startup native. JavaScript is limited to the

@@ -1246,9 +1246,305 @@ fn cache_recovers_incomplete_generations_and_invalidates_root_inputs_and_config(
 }
 
 #[test]
+fn affected_paths_filter_after_traversal_and_preserve_shell_arguments() {
+    let root = fixture();
+    let native_path = git_only_path();
+    // Names deliberately differ from directories and sort in the opposite order.
+    let source = "packages/z space & %PATH% !PATH! (one)^";
+    let consumer = "packages/a consumer";
+    for (directory, name, scripts) in [
+        (
+            source,
+            "@fixture/a-typed",
+            serde_json::json!({"build-types": "tsc -b"}),
+        ),
+        ("packages/middle", "@fixture/middle", serde_json::json!({})),
+        (
+            consumer,
+            "@fixture/z-typed",
+            serde_json::json!({"build-types": "tsc -b"}),
+        ),
+    ] {
+        write(
+            root.path(),
+            &format!("{directory}/package.json"),
+            &serde_json::json!({
+                "name": name, "scripts": scripts,
+            })
+            .to_string(),
+        );
+    }
+    write(
+        root.path(),
+        &format!("{source}/index.ts"),
+        "export const value = 1;\n",
+    );
+    write(
+        root.path(),
+        "packages/middle/index.ts",
+        &format!(
+            "import {{ value }} from '../{}/index'; export const middle = value;\n",
+            source.strip_prefix("packages/").unwrap(),
+        ),
+    );
+    write(
+        root.path(),
+        &format!("{consumer}/index.ts"),
+        "import { middle } from '../middle/index'; export const consumer = middle;\n",
+    );
+    git(root.path(), &["add", "."]);
+    git(
+        root.path(),
+        &["commit", "--quiet", "--no-gpg-sign", "-m", "path fixture"],
+    );
+
+    let skipped = cli(
+        root.path(),
+        &[
+            "affected",
+            "--base=HEAD",
+            "--with-script=build-types",
+            "--",
+            "exit 19 {workspacePaths}",
+        ],
+        Some(native_path.path()),
+    );
+    assert!(skipped.status.success());
+    assert!(skipped.stdout.is_empty());
+
+    write(
+        root.path(),
+        &format!("{source}/index.ts"),
+        "export const value = 2;\n",
+    );
+    let all = json(cli(
+        root.path(),
+        &["affected", "--base=HEAD", "--json"],
+        Some(native_path.path()),
+    ));
+    assert_eq!(
+        strings(&all["projects"]),
+        ["@fixture/a-typed", "@fixture/middle", "@fixture/z-typed"]
+    );
+    let filtered = json(cli(
+        root.path(),
+        &[
+            "affected",
+            "--base=HEAD",
+            "--with-script",
+            "build-types",
+            "--json",
+        ],
+        Some(native_path.path()),
+    ));
+    assert_eq!(
+        strings(&filtered["projects"]),
+        ["@fixture/a-typed", "@fixture/z-typed"]
+    );
+    assert_eq!(
+        filtered["workspacePaths"],
+        serde_json::json!({
+            "@fixture/a-typed": source, "@fixture/z-typed": consumer,
+        })
+    );
+    assert_eq!(
+        filtered["reasons"]
+            .as_object()
+            .unwrap()
+            .keys()
+            .map(String::as_str)
+            .collect::<Vec<_>>(),
+        ["@fixture/a-typed", "@fixture/z-typed"]
+    );
+    for field in ["affectedFiles", "changedFiles", "changedSpecifiers", "base"] {
+        assert_eq!(
+            filtered[field], all[field],
+            "filter must not change {field}"
+        );
+    }
+
+    let output = cli(
+        root.path(),
+        &[
+            "affected",
+            "--base=HEAD",
+            "--with-script=build-types",
+            "--paths",
+        ],
+        Some(native_path.path()),
+    );
+    assert!(output.status.success());
+    assert_eq!(
+        String::from_utf8_lossy(&output.stdout)
+            .lines()
+            .collect::<Vec<_>>(),
+        [source, consumer]
+    );
+    let explained = cli(
+        root.path(),
+        &[
+            "affected",
+            "--base=HEAD",
+            "--with-script=build-types",
+            "--paths",
+            "--explain",
+        ],
+        Some(native_path.path()),
+    );
+    assert!(explained.status.success());
+    assert_eq!(
+        String::from_utf8_lossy(&explained.stdout)
+            .lines()
+            .filter(|line| !line.starts_with(' '))
+            .collect::<Vec<_>>(),
+        [source, consumer]
+    );
+
+    // Native shell builtins exercise real argument boundaries without Node.js.
+    #[cfg(windows)]
+    let command =
+        "echo __filters__ {workspaces} & for %p in ({workspacePaths}) do @echo __path__%~p";
+    #[cfg(not(windows))]
+    let command = "echo __filters__ {workspaces}; for p in {workspacePaths}; do printf '__path__%s\\n' \"$p\"; done";
+    let output = cli(
+        root.path(),
+        &[
+            "affected",
+            "--base=HEAD",
+            "--with-script=build-types",
+            "--",
+            command,
+        ],
+        Some(native_path.path()),
+    );
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(
+        stdout.lines().any(|line| line.trim_end()
+            == "__filters__ --filter=@fixture/a-typed --filter=@fixture/z-typed"),
+        "{stdout}"
+    );
+    assert_eq!(
+        stdout
+            .lines()
+            .filter_map(|line| line.strip_prefix("__path__"))
+            .collect::<Vec<_>>(),
+        [source, consumer]
+    );
+
+    let executable = "child tools/monorepa-impact.exe";
+    fs::create_dir_all(root.path().join("child tools")).unwrap();
+    fs::copy(
+        env!("CARGO_BIN_EXE_monorepa-impact"),
+        root.path().join(executable),
+    )
+    .unwrap();
+    let external = cli(
+        root.path(),
+        &[
+            "affected",
+            "--base=HEAD",
+            "--with-script=build-types",
+            "--",
+            &format!("\"./{executable}\" dependents {{workspacePaths}} --help"),
+        ],
+        Some(native_path.path()),
+    );
+    assert!(
+        external.status.success(),
+        "{}",
+        String::from_utf8_lossy(&external.stderr)
+    );
+    assert!(
+        String::from_utf8_lossy(&external.stdout).contains("Usage: monorepa-impact dependents")
+    );
+
+    let failed = cli(
+        root.path(),
+        &[
+            "affected",
+            "--base=HEAD",
+            "--with-script=build-types",
+            "--",
+            "exit 17",
+        ],
+        Some(native_path.path()),
+    );
+    assert_eq!(failed.status.code(), Some(17));
+    let skipped = cli(
+        root.path(),
+        &[
+            "affected",
+            "--base=HEAD",
+            "--with-script=missing",
+            "--",
+            "exit 19 {workspacePaths}",
+        ],
+        Some(native_path.path()),
+    );
+    assert!(skipped.status.success());
+    assert!(skipped.stdout.is_empty());
+    let empty = json(cli(
+        root.path(),
+        &["affected", "--base=HEAD", "--with-script=missing", "--json"],
+        Some(native_path.path()),
+    ));
+    assert_eq!(empty["projects"], serde_json::json!([]));
+    assert_eq!(empty["workspacePaths"], serde_json::json!({}));
+    assert_eq!(empty["reasons"], serde_json::json!({}));
+
+    // The cached manifest must reflect script edits on the next automatic query.
+    write(
+        root.path(),
+        &format!("{source}/package.json"),
+        r#"{"name":"@fixture/a-typed","scripts":{"build-types":""}}"#,
+    );
+    let refreshed = json(cli(
+        root.path(),
+        &[
+            "affected",
+            "--base=HEAD",
+            "--with-script=build-types",
+            "--paths",
+            "--json",
+        ],
+        Some(native_path.path()),
+    ));
+    assert_eq!(strings(&refreshed["projects"]), ["@fixture/z-typed"]);
+    assert_eq!(
+        refreshed["workspacePaths"],
+        serde_json::json!({"@fixture/z-typed": consumer})
+    );
+}
+
+#[test]
 fn cli_validates_modes_and_supports_human_explanations() {
     let root = fixture();
     let invalid: &[(&[&str], &str)] = &[
+        (
+            &["affected", "--with-script"],
+            "--with-script requires a value",
+        ),
+        (
+            &["affected", "--with-script="],
+            "--with-script requires a script name",
+        ),
+        (
+            &["affected", "--with-script", "--json"],
+            "--with-script requires a script name",
+        ),
+        (
+            &["dependents", "file.ts", "--paths"],
+            "--paths and --with-script are only valid with affected",
+        ),
+        (
+            &["dependents", "file.ts", "--with-script=build-types"],
+            "--paths and --with-script are only valid with affected",
+        ),
         (
             &["--dependents", "file.ts", "--base", "HEAD"],
             "--base is only valid with affected",
@@ -1327,6 +1623,9 @@ fn cli_validates_modes_and_supports_human_explanations() {
     let affected_help = String::from_utf8_lossy(&affected_help.stdout);
     assert!(affected_help.starts_with("Usage: monorepa-impact affected"));
     assert!(affected_help.contains("--base"));
+    assert!(affected_help.contains("--paths"));
+    assert!(affected_help.contains("--with-script"));
+    assert!(affected_help.contains("{workspacePaths}"));
     assert!(!affected_help.contains("--specifier"));
 
     let dependents_help = cli(root.path(), &["dependents", "--help"], None);
@@ -1336,6 +1635,8 @@ fn cli_validates_modes_and_supports_human_explanations() {
     assert!(dependents_help.contains("--specifier"));
     assert!(dependents_help.contains("--direct"));
     assert!(!dependents_help.contains("--base"));
+    assert!(!dependents_help.contains("--paths"));
+    assert!(!dependents_help.contains("--with-script"));
 
     let version = cli(root.path(), &["--version"], None);
     assert!(version.status.success());
