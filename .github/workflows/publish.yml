@@ -197,8 +197,6 @@ jobs:
         run: node npm/verify-archives.cjs dist
       - name: Publish platform packages before root package
         shell: bash
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
           version=${GITHUB_REF_NAME#v}
           for archive in dist/monorepa-impact-*-"${version}".tgz; do
