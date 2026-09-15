@@ -189,6 +189,6 @@ binding information is available, plus `file`, `type`, and optional `via`.
 - Invalid arguments, configuration, graph, resolution, or cache errors exit non-zero.
 - A child-command failure returns that command's non-zero exit code when available.
 
-Version `1.0.1` treats the canonical commands, supported legacy aliases, configuration
+Version `1.1.0` treats the canonical commands, supported legacy aliases, configuration
 keys, and public JSON fields as stable under Semantic Versioning. Minor releases may
 add fields; renaming or removing a field requires a major release.

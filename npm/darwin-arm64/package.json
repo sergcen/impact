@@ -1,6 +1,6 @@
 {
   "name": "@monorepa/impact-darwin-arm64",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "description": "Native binary for @monorepa/impact on macOS ARM64",
   "author": "Monorepa",
   "license": "MIT",

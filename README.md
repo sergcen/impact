@@ -304,7 +304,7 @@ Rust is required only when building from source.
 - A successful query with no matches exits with `0`.
 - Invalid arguments, graph or cache failures, and child-command failures return a
   non-zero exit code.
-- Version `1.0.1` treats the CLI, configuration, and public JSON interface as stable
+- Version `1.1.0` treats the CLI, configuration, and public JSON interface as stable
   under Semantic Versioning.
 
 See the [CLI and JSON reference](./docs/cli.md) for every flag and output field.
