@@ -4,7 +4,9 @@ use monorepa_impact::analysis::{
 use monorepa_impact::config::{DEFAULT_CACHE_DIRECTORY, load_config};
 use monorepa_impact::git::{collect_changed_files, collect_changed_specifiers};
 use monorepa_impact::graph::{BuildOptions, Snapshot, build_graph, update_cached_graph};
+use monorepa_impact::model::Workspaces;
 use monorepa_impact::workspaces::discover_workspaces;
+use std::collections::BTreeMap;
 use std::env;
 use std::io::{self, BufWriter, Write};
 use std::process::{Command, ExitCode, Stdio};
@@ -28,6 +30,8 @@ Find workspaces affected by the Git diff and current working tree.
 
 Options:
   --base <ref>          Compare HEAD with this Git ref
+  --paths               Print workspace directories instead of names
+  --with-script <name>  Select affected workspaces with this package.json script
   --config <path>       Use a JSON/JSONC affected config
   --json                Print machine-readable output
   --explain             Print dependency chains for projects
@@ -35,7 +39,11 @@ Options:
   --rebuild-cache       Rebuild the dependency graph cache
   --strict-cache        Force a graph rebuild from the current working tree
   --trust-cache         Skip automatic working-tree validation for this query
-  -h, --help            Show this help";
+  -h, --help            Show this help
+
+Child command placeholders:
+  {workspaces}          pnpm --filter=<name> arguments
+  {workspacePaths}      Quoted repository-relative workspace directories";
 
 const DEPENDENTS_HELP: &str = "Usage: monorepa-impact dependents <file> [<file>...] [options]
 
@@ -70,6 +78,8 @@ struct Options {
     explain: bool,
     help: bool,
     json: bool,
+    paths: bool,
+    with_script: Option<String>,
     mode: QueryMode,
     explicit_mode: bool,
     rebuild: bool,
@@ -113,6 +123,7 @@ fn parse_args(args: &[String]) -> Result<Options, String> {
         match argument.as_str() {
             "--help" | "-h" => options.help = true,
             "--json" => options.json = true,
+            "--paths" => options.paths = true,
             "--explain" => options.explain = true,
             "--direct" => options.direct = true,
             "--no-cache" => options.use_cache = false,
@@ -130,6 +141,13 @@ fn parse_args(args: &[String]) -> Result<Options, String> {
             }
             _ if argument == "--base" || argument.starts_with("--base=") => {
                 options.base = Some(read_value(args, &mut index, "--base")?);
+            }
+            _ if argument == "--with-script" || argument.starts_with("--with-script=") => {
+                let script = read_value(args, &mut index, "--with-script")?;
+                if script.is_empty() || script.starts_with('-') {
+                    return Err("--with-script requires a script name".into());
+                }
+                options.with_script = Some(script);
             }
             _ if argument == "--config" || argument.starts_with("--config=") => {
                 options.config = Some(read_value(args, &mut index, "--config")?);
@@ -185,6 +203,9 @@ fn parse_args(args: &[String]) -> Result<Options, String> {
     if dependent_query && options.base.is_some() {
         return Err("--base is only valid with affected".into());
     }
+    if dependent_query && (options.paths || options.with_script.is_some()) {
+        return Err("--paths and --with-script are only valid with affected".into());
+    }
     if dependent_query && !options.command.is_empty() {
         return Err("A child command is only valid with affected".into());
     }
@@ -237,13 +258,61 @@ fn print_dependent(result: &DependentResult, options: &Options) -> Result<(), St
     Ok(())
 }
 
-fn print_affected(result: &AffectedResult, options: &Options) -> Result<(), String> {
+// Applicability is an output filter: it must not interrupt graph traversal through
+// workspaces that do not expose the requested script.
+fn select_workspace_paths(
+    result: &mut AffectedResult,
+    workspaces: &Workspaces,
+    script: Option<&str>,
+) -> Result<BTreeMap<String, String>, String> {
+    let mut paths = BTreeMap::new();
+    for name in &result.projects {
+        let project = workspaces
+            .project_by_name(name)
+            .ok_or_else(|| format!("Unknown affected workspace: {name}"))?;
+        if let Some(script) = script
+            && project.manifest["scripts"][script]
+                .as_str()
+                .is_none_or(|value| value.is_empty())
+        {
+            continue;
+        }
+        paths.insert(name.clone(), project.dir.clone());
+    }
+    result.projects.retain(|name| paths.contains_key(name));
+    result.reasons.retain(|name, _| paths.contains_key(name));
+    Ok(paths)
+}
+
+#[derive(serde::Serialize)]
+struct AffectedOutput<'a> {
+    #[serde(flatten)]
+    result: &'a AffectedResult,
+    #[serde(rename = "workspacePaths")]
+    workspace_paths: &'a BTreeMap<String, String>,
+}
+
+fn print_affected(
+    result: &AffectedResult,
+    paths: &BTreeMap<String, String>,
+    options: &Options,
+) -> Result<(), String> {
     if options.json {
-        return write_json(result);
+        return write_json(&AffectedOutput {
+            result,
+            workspace_paths: paths,
+        });
     }
     if options.explain {
         for project in &result.projects {
-            println!("{project}");
+            println!(
+                "{}",
+                if options.paths {
+                    &paths[project]
+                } else {
+                    project
+                }
+            );
             for reason in result.reasons.get(project).into_iter().flatten() {
                 let suffix = reason
                     .via
@@ -254,7 +323,18 @@ fn print_affected(result: &AffectedResult, options: &Options) -> Result<(), Stri
             }
         }
     } else if options.command.is_empty() && !result.projects.is_empty() {
-        println!("{}", result.projects.join("\n"));
+        let values: Vec<&str> = result
+            .projects
+            .iter()
+            .map(|name| {
+                if options.paths {
+                    paths[name].as_str()
+                } else {
+                    name.as_str()
+                }
+            })
+            .collect();
+        println!("{}", values.join("\n"));
     }
     Ok(())
 }
@@ -281,7 +361,11 @@ fn shell(command: &str) -> Command {
     shell
 }
 
-fn execute_command(result: &AffectedResult, options: &Options) -> Result<i32, String> {
+fn execute_command(
+    result: &AffectedResult,
+    paths: &BTreeMap<String, String>,
+    options: &Options,
+) -> Result<i32, String> {
     if options.command.is_empty() || result.projects.is_empty() {
         return Ok(0);
     }
@@ -291,10 +375,44 @@ fn execute_command(result: &AffectedResult, options: &Options) -> Result<i32, St
         .map(|project| format!("--filter={project}"))
         .collect::<Vec<_>>()
         .join(" ");
-    let command = options.command.join(" ").replace("{workspaces}", &filters);
+    let template = options.command.join(" ");
+    let mut path_variables = Vec::new();
+    let command = if template.contains("{workspacePaths}") {
+        let arguments = paths
+            .values()
+            .enumerate()
+            .map(|(index, path)| {
+                let variable = format!("MONOREPA_IMPACT_WORKSPACE_PATH_{index}");
+                path_variables.push((variable.clone(), path));
+                // Expanding a quoted variable preserves spaces and shell metacharacters
+                // without interpreting workspace directory names as command text.
+                if cfg!(windows) {
+                    format!("\"%{variable}%\"")
+                } else {
+                    format!("\"${{{variable}}}\"")
+                }
+            })
+            .collect::<Vec<_>>()
+            .join(" ");
+        template.replace("{workspacePaths}", &arguments)
+    } else {
+        template
+    }
+    .replace("{workspaces}", &filters);
     println!("Affected projects:\n{}\n", result.projects.join("\n"));
     println!("Selective command: {command}");
-    let status = shell(&command)
+    let mut child = shell(&command);
+    // cmd delayed expansion would reinterpret exclamation marks in path values.
+    #[cfg(windows)]
+    if !path_variables.is_empty() {
+        use std::os::windows::process::CommandExt;
+        child = Command::new(env::var_os("ComSpec").unwrap_or_else(|| "cmd.exe".into()));
+        child
+            .args(["/D", "/V:OFF", "/S", "/C"])
+            .raw_arg(format!("\"{command}\""));
+    }
+    let status = child
+        .envs(path_variables)
         .stdin(Stdio::inherit())
         .stdout(Stdio::inherit())
         .stderr(Stdio::inherit())
@@ -385,7 +503,7 @@ fn run() -> Result<i32, String> {
         .unwrap_or_else(|| loaded.config.base.clone());
     let changed_files = collect_changed_files(&cwd, &base)?;
     let changed_specifiers = collect_changed_specifiers(&cwd, &base, &changed_files);
-    let result = analyze_affected(
+    let mut result = analyze_affected(
         &graph,
         &workspaces,
         &loaded.config,
@@ -393,8 +511,9 @@ fn run() -> Result<i32, String> {
         changed_files,
         changed_specifiers,
     );
-    print_affected(&result, &options)?;
-    execute_command(&result, &options)
+    let paths = select_workspace_paths(&mut result, &workspaces, options.with_script.as_deref())?;
+    print_affected(&result, &paths, &options)?;
+    execute_command(&result, &paths, &options)
 }
 
 fn main() -> ExitCode {
@@ -404,5 +523,60 @@ fn main() -> ExitCode {
             eprintln!("{error}");
             ExitCode::FAILURE
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use monorepa_impact::model::{GraphStats, Project};
+    use serde_json::json;
+
+    #[test]
+    fn script_filter_uses_exact_nonempty_manifest_scripts() {
+        let manifests = [
+            json!({"scripts": {"build-types": "tsc -b"}}),
+            json!({"scripts": {"build-types": ""}}),
+            json!({"scripts": {"build-types": null}}),
+            json!({"scripts": {"prebuild-types": "tsc -b"}}),
+            json!({}),
+        ];
+        let workspaces = Workspaces {
+            projects: manifests
+                .into_iter()
+                .enumerate()
+                .map(|(index, manifest)| Project {
+                    name: format!("@test/{index}"),
+                    dir: format!("packages/directory {index}"),
+                    manifest_path: format!("packages/directory {index}/package.json"),
+                    manifest,
+                })
+                .collect(),
+        };
+        let mut result = AffectedResult {
+            affected_files: vec!["packages/directory 1/index.ts".into()],
+            base: "HEAD".into(),
+            changed_files: vec![],
+            changed_specifiers: BTreeMap::new(),
+            graph_stats: GraphStats::cached(1, "automatic"),
+            projects: workspaces
+                .projects
+                .iter()
+                .map(|project| project.name.clone())
+                .collect(),
+            reasons: workspaces
+                .projects
+                .iter()
+                .map(|project| (project.name.clone(), vec![]))
+                .collect(),
+        };
+        let paths = select_workspace_paths(&mut result, &workspaces, Some("build-types")).unwrap();
+        assert_eq!(
+            paths,
+            BTreeMap::from([("@test/0".into(), "packages/directory 0".into())])
+        );
+        assert_eq!(result.projects, ["@test/0"]);
+        assert_eq!(result.reasons.keys().collect::<Vec<_>>(), [&"@test/0"]);
+        assert_eq!(result.affected_files, ["packages/directory 1/index.ts"]);
     }
 }

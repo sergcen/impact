@@ -23,6 +23,8 @@ monorepa-impact dependents --help
 | Flag | Command | Purpose |
 | --- | --- | --- |
 | `--base <ref>` | `affected` | Compare `HEAD` and the current working tree with a base ref |
+| `--paths` | `affected` | Print repository-relative workspace directories instead of names |
+| `--with-script <name>` | `affected` | Keep affected workspaces with a non-empty string script of this exact name |
 | `--specifier <name>` | `dependents` | Restrict traversal to an imported/exported binding; repeatable |
 | `--direct` | `dependents` | Return immediate importers only |
 | `--config <path>` | both | Load a specific JSON or JSONC configuration |
@@ -38,7 +40,7 @@ monorepa-impact dependents --help
 Invalid combinations are rejected. Notably:
 
 - `--direct` and `--specifier` are valid only with `dependents`;
-- `--base` and child commands are valid only with `affected`;
+- `--base`, `--paths`, `--with-script`, and child commands are valid only with `affected`;
 - `--trust-cache` cannot be combined with `--strict-cache` or `--no-cache`.
 
 ### Legacy compatibility
@@ -67,6 +69,20 @@ untracked working-tree files are included in the same result.
 
 Without `--json` or `--explain`, stdout contains one sorted workspace name per line.
 
+`--paths` replaces names with workspace directories, relative to the repository
+root and using `/` separators on every platform. Paths follow the same workspace-name
+order. With `--explain`, the headings become paths; reason chains are unchanged.
+With `--json`, `--paths` has no effect: the output includes both names and a
+`workspacePaths` map.
+
+`--with-script <name>` (also `--with-script=<name>`) filters the result after graph
+traversal using each workspace's `package.json#scripts`. Only a non-empty string at
+the exact script name qualifies; lifecycle hooks alone do not qualify. This filter
+does not run scripts, validate TypeScript configuration, or change graph topology or
+cache compatibility. `projects`, `workspacePaths`, and `reasons` describe the filtered
+selection; `changedFiles`, `changedSpecifiers`, and `affectedFiles` still describe the
+full analysis.
+
 ### Run a child command
 
 ```bash
@@ -75,6 +91,25 @@ monorepa-impact affected --base origin/main -- 'pnpm {workspaces} --if-present t
 
 `{workspaces}` expands to sorted `--filter=<workspace>` arguments. The command is not
 started when the affected set is empty. Its exit status becomes the CLI exit status.
+
+To invoke one tool with directory arguments instead of pnpm filters:
+
+```bash
+monorepa-impact affected --base origin/main --with-script build-types -- 'pnpm exec tsc -b {workspacePaths}'
+```
+
+`{workspacePaths}` expands to repository-relative directories in workspace-name
+order, each passed as one quoted argument. Use it as an unquoted, standalone
+placeholder inside the command template; it may be combined with `{workspaces}`.
+The command runs from the repository root. A fully filtered-out selection also
+skips execution and exits with `0`, avoiding an accidental argument-free `tsc -b`.
+
+Commands use `/bin/sh` on Unix and `cmd.exe` on Windows. Path arguments are passed
+through child-local `MONOREPA_IMPACT_WORKSPACE_PATH_<index>` environment variables
+and quoted references, preserving spaces and shell metacharacters. On Windows,
+delayed expansion is disabled for commands using `{workspacePaths}` to preserve `!`
+in paths. Avoid adding another shell-evaluation layer such as `eval` or `call` around
+the expanded paths. The `Selective command` diagnostic shows the variable references.
 
 ## Dependents mode
 
@@ -118,6 +153,7 @@ chain. A chain may include:
 | `changedSpecifiers` | Export names whose fingerprints changed for each source file |
 | `graphStats` | Cache, snapshot, validation, parsed-file, and reused-file state |
 | `projects` | Sorted affected workspace names |
+| `workspacePaths` | Map from each selected workspace name to its repository-relative directory |
 | `reasons` | Explanation chains keyed by workspace name |
 
 ## JSON: module dependents
